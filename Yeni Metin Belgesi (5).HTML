@@ -1,0 +1,927 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Pofynetwork - Creator & Developer Network</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* SPOTIFY ULTRA DARK THEME */
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, Roboto, "Helvetica Neue", sans-serif; }
+        html, body { background-color: #000000; color: #ffffff; height: 100vh; width: 100vw; overflow: hidden; position: relative; }
+        
+        /* GİRİŞ DUVARI */
+        .auth-overlay-screen { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: linear-gradient(to bottom, #121212 0%, #000000 100%); z-index: 999999; display: flex; align-items: center; justify-content: center; padding: 16px; }
+        .auth-spotify-card { background-color: #171717; border-radius: 12px; padding: 40px 30px; width: 100%; max-width: 420px; text-align: center; box-shadow: 0 15px 35px rgba(0,0,0,0.6); border: 1px solid rgba(255,255,255,0.03); }
+        .auth-brand-logo { font-size: 34px; font-weight: 800; color: #4fd1c5; margin-bottom: 20px; display: flex; align-items: center; justify-content: center; gap: 10px; letter-spacing: -1px; }
+        .auth-brand-logo span { font-weight: 300; color: #fff; }
+        
+        /* ROL SEÇİM EKRANI */
+        .role-selection-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: #000000; z-index: 9999999; display: none; flex-direction: column; align-items: center; justify-content: center; padding: 20px; }
+        .role-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; max-width: 800px; width: 100%; margin-top: 30px; }
+        .role-card-selection { background: #121212; border: 2px solid #282828; border-radius: 12px; padding: 30px 20px; text-align: center; cursor: pointer; transition: all 0.2s; }
+        .role-card-selection:hover { border-color: #4fd1c5; background: #181818; transform: translateY(-4px); }
+        .role-card-selection i { font-size: 40px; color: #4fd1c5; margin-bottom: 16px; }
+        
+        /* MAIN STRUCT */
+        .app-container { display: none; grid-template-columns: 280px 1fr 380px; height: 100vh; width: 100vw; padding: 8px; gap: 8px; background-color: #000000; }
+        .spotify-panel { background-color: #121212; border-radius: 8px; display: flex; flex-direction: column; overflow: hidden; position: relative; }
+        
+        /* SIDEBAR */
+        .nav-group { background-color: #121212; padding: 24px 20px; display: flex; flex-direction: column; gap: 18px; }
+        .logo-area { font-size: 22px; font-weight: 800; color: #4fd1c5; display: flex; align-items: center; gap: 6px; padding-left: 4px; margin-bottom: 12px; letter-spacing: -0.5px; }
+        .logo-area span { font-weight: 300; color: #fff; }
+        .sidebar-btn { display: flex; align-items: center; gap: 20px; color: #b3b3b3; font-size: 15px; font-weight: 700; text-decoration: none; padding: 8px 4px; cursor: pointer; transition: color 0.2s; }
+        .sidebar-btn:hover, .sidebar-btn.active-nav { color: #ffffff; }
+        .sidebar-btn i { font-size: 22px; }
+        .notification-badge-dot { background: #4fd1c5; width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-left: auto; }
+
+        /* CENTER FEED */
+        .main-panel-view { display: flex; flex-direction: column; height: 100%; overflow: hidden; }
+        .main-feed-view { flex: 1; display: none; flex-direction: column; overflow-y: auto; background: linear-gradient(to bottom, #1e1e1e 0%, #121212 30%); padding: 24px; padding-bottom: 100px; scroll-behavior: smooth; }
+        .main-feed-view.active-view { display: flex; }
+        
+        /* CARDS */
+        .network-post-card { background-color: #181818; border-radius: 8px; padding: 20px; margin-bottom: 14px; border: 1px solid transparent; transition: background-color 0.2s; cursor: pointer; position: relative; }
+        .network-post-card:hover { background-color: #242424; }
+        .post-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+        .user-meta-box { display: flex; align-items: center; gap: 12px; }
+        .user-pfp { width: 42px; height: 42px; border-radius: 50%; background-color: #282828; background-size: cover; background-position: center; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 15px; color: #fff; border: 1px solid rgba(255,255,255,0.05); transition: transform 0.2s; }
+        .user-pfp:hover { transform: scale(1.08); border-color: #4fd1c5; }
+        
+        .badge-role { font-size: 10px; padding: 3px 9px; border-radius: 12px; font-weight: 700; text-transform: uppercase; margin-top: 4px; display: inline-block; letter-spacing: 0.5px; }
+        .role-girişimci { background-color: #4fd1c5; color: #000; }
+        .role-yazılımcı { background-color: #00d2ff; color: #000; }
+        .role-üretici { background-color: #ff4757; color: #fff; }
+        .role-admin { background-color: #purple; background: linear-gradient(45deg, #9400d3, #4b0082); color: #fff; box-shadow: 0 0 8px rgba(148,0,211,0.6); }
+
+        .post-delete-btn { position: absolute; top: 20px; right: 20px; color: #535353; cursor: pointer; transition: color 0.2s; padding: 4px; z-index: 10; }
+        .post-delete-btn:hover { color: #ff4757; }
+        .post-title { font-size: 19px; font-weight: 800; margin-bottom: 6px; color: #fff; letter-spacing: -0.3px; }
+        .post-body { font-size: 14px; color: #a7a7a7; line-height: 1.5; margin-bottom: 14px; }
+        .card-footer-metrics { display: flex; gap: 24px; font-size: 13px; color: #b3b3b3; border-top: 1px solid #242424; padding-top: 12px; }
+        .like-btn { background: none; border: none; color: #b3b3b3; cursor: pointer; font-size: 13px; display: flex; align-items: center; gap: 6px; transition: color 0.2s; }
+        .like-btn.liked { color: #4fd1c5; }
+        
+        /* SOCIAL LINKS SYSTEM */
+        .social-row-links { display: flex; gap: 12px; margin-top: 10px; justify-content: center; }
+        .social-icon-btn { width: 34px; height: 34px; border-radius: 50%; background: #242424; display: flex; align-items: center; justify-content: center; color: #b3b3b3; text-decoration: none; font-size: 15px; transition: all 0.2s; }
+        .social-icon-btn:hover { background: #4fd1c5; color: #000; transform: scale(1.05); }
+
+        /* RIGHT PANEL */
+        .right-detail-panel { background-color: #121212; padding: 0; display: flex; flex-direction: column; overflow: hidden; }
+        .detail-header-wrapper { display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; background-color: #181818; border-bottom: 1px solid #242424; }
+        .detail-header-text { font-size: 16px; font-weight: 700; color: #ffffff; letter-spacing: -0.2px; }
+        
+        .detail-panel-scroll-content { flex: 1; display: flex; flex-direction: column; overflow-y: auto; padding: 20px; gap: 16px; }
+        .selected-pfp-large { width: 130px; height: 130px; border-radius: 8px; background-color: #282828; margin: 10px auto 16px; background-size: cover; background-position: center; display: flex; align-items: center; justify-content: center; font-size: 44px; box-shadow: 0 8px 24px rgba(0,0,0,0.6); position: relative; }
+        .pitch-scroll-box { background-color: #181818; border-radius: 8px; padding: 16px; font-size: 13px; color: #b3b3b3; max-height: 140px; overflow-y: auto; border: 1px solid #242424; line-height: 1.5; }
+
+        /* BİLDİRİMLER */
+        .notification-item-card { background: #181818; border-radius: 6px; padding: 12px; display: flex; flex-direction: column; gap: 4px; border-left: 3px solid #4fd1c5; position: relative; cursor: pointer; transition: background 0.2s; }
+        .notification-item-card:hover { background: #222; }
+        .noti-delete-trigger { position: absolute; top: 12px; right: 12px; color: #535353; font-size: 14px; cursor: pointer; transition: color 0.2s; padding: 4px; z-index: 5; }
+        .noti-delete-trigger:hover { color: #ff4757; }
+        .noti-user-info { display: flex; align-items: center; gap: 6px; }
+        .noti-user-name { font-size: 13px; font-weight: 700; color: #fff; }
+        .noti-badge { font-size: 8px; font-weight: 800; text-transform: uppercase; padding: 1px 5px; border-radius: 4px; }
+
+        /* --- CHAT SİSTEMİ --- */
+        .network-chat-area { flex: 1; display: flex; flex-direction: column; background-color: #0b141a; position: relative; height: calc(100% - 160px); width: 100%; overflow: hidden; }
+        .chat-header-bar { background-color: #111b21; padding: 14px 20px; font-size: 14px; font-weight: 700; color: #e9edef; border-bottom: 1px solid #222e35; }
+        .chat-messages-container { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 10px; scroll-behavior: smooth; }
+        .chat-messages-container::-webkit-scrollbar { width: 5px; }
+        .chat-messages-container::-webkit-scrollbar-track { background: transparent; }
+        .chat-messages-container::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.15); border-radius: 4px; }
+        .chat-bubble-wrapper { display: flex; width: 100%; }
+        .chat-bubble-row { display: flex; flex-direction: column; padding: 8px 14px; border-radius: 12px; max-width: 80%; word-wrap: break-word; box-shadow: 0 1px 0.5px rgba(0,0,0,0.13); line-height: 1.4; }
+        .chat-sender-meta { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
+        .chat-sender-name { font-size: 11px; font-weight: 700; color: #4fd1c5; }
+        .chat-sender-badge { font-size: 8px; font-weight: 800; text-transform: uppercase; padding: 1px 4px; border-radius: 3px; background: rgba(255,255,255,0.08); color: #b3b3b3; }
+        .chat-bubble-text { font-size: 14px; color: #e9edef; }
+        .wrapper-left { justify-content: flex-start; }
+        .wrapper-left .chat-bubble-row { background: #202c33; border-top-left-radius: 0px; }
+        .wrapper-right { justify-content: flex-end; }
+        .wrapper-right .chat-bubble-row { background: #005c4b; border-top-right-radius: 0px; }
+        .wrapper-right .chat-sender-name { color: #00ffcc; }
+        .chat-bottom-input-bar { position: relative; background-color: #111b21; padding: 12px 14px; display: flex; align-items: center; gap: 10px; box-sizing: border-box; border-top: 1px solid #222e35; width: 100%; z-index: 99; }
+        .chat-bottom-input-bar .chat-textarea-field { flex: 1; background-color: #2a3942; border: none; border-radius: 24px; padding: 10px 18px; color: #e9edef; outline: none; font-size: 15px; resize: none; max-height: 100px; }
+        .chat-bottom-input-bar .chat-textarea-field::placeholder { color: #8696a0; }
+        .chat-round-send-btn { background-color: #00a884; color: #ffffff; border: none; outline: none; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: transform 0.1s ease; flex-shrink: 0; }
+        .chat-round-send-btn:hover { transform: scale(1.05); background-color: #008f72; }
+
+        /* DİNAMİK PROFİL DETAY MODALI */
+        .pofy-modal-overlay { position: fixed; top:0; left:0; width:100vw; height:100vh; background: rgba(0,0,0,0.7); backdrop-filter: blur(8px); z-index: 9999999; display:none; align-items:center; justify-content:center; padding:20px; }
+        .pofy-modal-card { background: #181818; border: 1px solid #282828; border-radius: 16px; width: 100%; max-width: 400px; padding: 30px 24px; text-align: center; box-shadow: 0 20px 40px rgba(0,0,0,0.5); position: relative; animation: pofyPop 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        @keyframes pofyPop { from { transform: scale(0.85); opacity:0; } to { transform: scale(1); opacity:1; } }
+        .pofy-modal-close { position:absolute; top:16px; right:16px; font-size:20px; color:#a7a7a7; cursor:pointer; }
+        .pofy-modal-close:hover { color:#fff; }
+
+        /* MODERN ANİMASYONLU BİLGİLENDİRME BANNERI */
+        .pofy-toast-rules { position: fixed; top: -150px; left: 50%; transform: translateX(-50%); width: 90%; max-width: 500px; background: #1db954; color: #000; padding: 16px 20px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); z-index: 10000000; transition: top 0.5s cubic-bezier(0.075, 0.82, 0.165, 1); }
+        .pofy-toast-rules.active { top: 24px; }
+        .pofy-toast-title { font-weight: 800; font-size: 15px; margin-bottom: 4px; display: flex; align-items: center; gap: 8px; }
+        .pofy-toast-body { font-size: 13px; line-height: 1.4; font-weight: 600; }
+        .pofy-toast-btn { margin-top: 10px; background: #000; color: #fff; border: none; padding: 6px 16px; font-weight: 700; border-radius: 20px; cursor: pointer; font-size: 12px; float: right; }
+
+        /* PROFIY SETTINGS DROPDOWN */
+        .profile-settings-container { position: absolute; top: 16px; right: 16px; z-index: 100; }
+        .profile-settings-trigger { background: transparent; border: none; color: #b3b3b3; font-size: 18px; cursor: pointer; transition: color 0.2s, transform 0.2s; padding: 6px; }
+        .profile-settings-trigger:hover { color: #fff; transform: rotate(45deg); }
+        .profile-settings-menu { position: absolute; top: 100%; right: 0; background: #282828; border: 1px solid rgba(255,255,255,0.05); border-radius: 6px; box-shadow: 0 8px 24px rgba(0,0,0,0.5); display: none; flex-direction: column; min-width: 130px; overflow: hidden; margin-top: 4px; }
+        .profile-settings-menu.active { display: flex; }
+        .profile-settings-item { background: transparent; border: none; text-align: left; padding: 10px 14px; font-size: 13px; color: #ea0a0a; font-weight: 600; color: #b3b3b3; cursor: pointer; transition: background 0.2s, color 0.2s; display: flex; align-items: center; gap: 8px; }
+        .profile-settings-item:hover { background: #333333; color: #ffffff; }
+
+        /* INPUTS & SELECTS */
+        .spotify-input { width: 100%; background-color: #2a2a2a; border: 1px solid transparent; border-radius: 4px; padding: 12px 14px; color: #fff; margin-bottom: 12px; outline: none; font-size: 14px; }
+        .spotify-input:focus { background-color: #333333; border-color: #535353; }
+        .spotify-select { width: 100%; background-color: #2a2a2a; border: none; border-radius: 4px; padding: 12px 14px; color: #fff; margin-bottom: 12px; outline: none; font-size: 14px; color-scheme: dark; }
+        .spotify-textarea { width: 100%; background-color: #2a2a2a; border: none; border-radius: 4px; padding: 12px 14px; color: #fff; margin-bottom: 12px; outline: none; font-size: 14px; resize: none; height: 100px; }
+        
+        .spotify-btn { background-color: #4fd1c5; color: #000; border: none; padding: 14px 28px; border-radius: 50px; font-weight: 700; cursor: pointer; font-size: 13px; letter-spacing: 1px; text-transform: uppercase; transition: transform 0.1s, background-color 0.2s; display: inline-block; text-align: center; }
+        .spotify-btn:hover { background-color: #5fe1d5; transform: scale(1.02); }
+        .sub-link { font-size: 12px; color: #b3b3b3; cursor: pointer; display: block; margin-top: 18px; font-weight: 600; text-decoration: none; }
+
+        /* MOBİL ALT BARI */
+        .mobile-bottom-navbar { display: none; position: fixed; bottom: 0; left: 0; width: 100vw; height: 64px; background: linear-gradient(to top, #000000 80%, rgba(0,0,0,0.7) 0%); border-top: 1px solid rgba(255,255,255,0.05); z-index: 9999; grid-template-columns: repeat(5, 1fr); }
+        .m-nav-item { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; color: #b3b3b3; font-size: 11px; font-weight: 600; cursor: pointer; }
+        .m-nav-item i { font-size: 20px; }
+        .m-nav-item.active-mnav { color: #4fd1c5; }
+        .m-nav-item.plus-only-btn i { font-size: 24px; color: #ffffff; background: #282828; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; border-radius: 50%; transition: background 0.2s; }
+        .m-nav-item.plus-only-btn.active-mnav i { background: #4fd1c5; color: #000000; }
+
+        .live-system-debugger { position: fixed; bottom: 74px; right: 10px; background: rgba(0,0,0,0.85); border: 1px solid #242424; padding: 6px; font-family: monospace; font-size: 9px; color: #4fd1c5; z-index: 100000; border-radius: 4px; pointer-events: none; opacity: 0.4; }
+
+        @media (max-width: 1024px) {
+            .app-container { grid-template-columns: 1fr; padding: 0; gap: 0; }
+            .spotify-panel:not(.main-panel-view) { display: none !important; }
+            .right-detail-panel { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 999; display: none; }
+            .right-detail-panel.mobile-active-panel { display: flex !important; }
+            .main-feed-view { padding: 16px; padding-bottom: 90px; }
+            .mobile-bottom-navbar { display: grid; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="pofy-toast-rules" id="pofy-rules-popup">
+        <div class="pofy-toast-title"><i class="fa-solid fa-handshake-angle"></i> Pofynetwork Topluluk Vizyonu</div>
+        <div class="pofy-toast-body">
+            Burada insanlara fikirlerinizi gösterebilir, tartışabilir, sorular sorabilir ve yeni ortaklar bulabilirsiniz. 
+            <span style="color:#000; display:block; margin-top:4px; font-weight:800;"><i class="fa-solid fa-triangle-exclamation"></i> Küfür atarsanız kalıcı banlanırsınız. Siyasi konuşmalar yasaktır!</span>
+        </div>
+        <button class="pofy-toast-btn" onclick="window.closePofyRules()">Anladım</button>
+    </div>
+
+    <div class="pofy-modal-overlay" id="pofy-profile-modal">
+        <div class="pofy-modal-card">
+            <i class="fa-solid fa-xmark pofy-modal-close" onclick="window.closePofyModal()"></i>
+            <div class="selected-pfp-large" id="modal-user-avatar" style="width:100px; height:100px; font-size:32px;">?</div>
+            <h3 id="modal-user-name" style="font-size:22px; font-weight:800; margin-bottom:4px;">-</h3>
+            <div id="modal-user-badge"></div>
+            <p id="modal-user-bio" style="color:#b3b3b3; font-size:13px; margin:16px 0; line-height:1.5; font-style:italic;">Açıklama yükleniyor...</p>
+            <div class="social-row-links" id="modal-user-socials"></div>
+        </div>
+    </div>
+
+    <div class="auth-overlay-screen" id="app-auth-screen">
+        <div class="auth-spotify-card">
+            <div class="auth-brand-logo"><i class="fa-solid fa-circle-nodes"></i> pofy<span>network</span></div>
+            <h3 id="auth-title" style="margin-bottom: 22px; font-weight: 700; font-size: 18px;">Girişimci & Yazılımcı Ağı</h3>
+            
+            <input type="text" class="spotify-input" id="register-fullname" placeholder="Ad Soyad veya Girişim Adı" style="display:none;">
+            <input type="email" class="spotify-input" id="auth-email-field" placeholder="E-posta Adresi">
+            <input type="password" class="spotify-input" id="auth-pass-field" placeholder="Şifre">
+            
+            <button class="spotify-btn" style="width: 100%; margin-top: 8px;" id="auth-main-btn" onclick="window.submitAuthForm()">Giriş Yap</button>
+            <span class="sub-link" id="auth-toggle-trigger" onclick="window.toggleAuthScreenMode()">Hesabın yok mu? Ücretsiz Kayıt Ol</span>
+        </div>
+    </div>
+
+    <div class="role-selection-overlay" id="app-role-selection-screen">
+        <div class="auth-brand-logo" style="margin-bottom:10px;"><i class="fa-solid fa-circle-nodes"></i> pofy<span>network</span></div>
+        <h2 style="font-size: 32px; font-weight: 800; letter-spacing: -1px; text-align: center;">Pofynetwork'e Hoş Geldin!</h2>
+        <p style="color: #b3b3b3; margin-top: 10px; font-size: 16px; text-align: center;">Profilinizin öne çıkması için size en uygun olanı seçin:</p>
+        <div class="role-grid">
+            <div class="role-card-selection" onclick="window.completeRoleOnboarding('girişimci')">
+                <i class="fa-solid fa-rocket"></i>
+                <h4 style="font-size: 18px; font-weight: 700; margin-bottom: 8px;">Girişimci</h4>
+                <p style="color: #a7a7a7; font-size: 13px;">Founder, fikir lideri veya takım arkadaşı arayan kurucu ortağım.</p>
+            </div>
+            <div class="role-card-selection" onclick="window.completeRoleOnboarding('yazılımcı')">
+                <i class="fa-solid fa-code"></i>
+                <h4 style="font-size: 18px; font-weight: 700; margin-bottom: 8px;">Yazılımcı</h4>
+                <p style="color: #a7a7a7; font-size: 13px;">Developer, mühendis ya da projeye kod desteği verecek uzmanım.</p>
+            </div>
+            <div class="role-card-selection" onclick="window.completeRoleOnboarding('üretici')">
+                <i class="fa-solid fa-wand-magic-sparkles"></i>
+                <h4 style="font-size: 18px; font-weight: 700; margin-bottom: 8px;">İçerik Üreticisi</h4>
+                <p style="color: #a7a7a7; font-size: 13px;">Creator, pazarlamacı ya da topluluk büyüten kreatif liderim.</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="app-container" id="app-main-workspace">
+        
+        <aside class="spotify-panel">
+            <div class="nav-group">
+                <div class="logo-area"><i class="fa-solid fa-circle-nodes"></i> pofy<span>network</span></div>
+                <div class="sidebar-btn active-nav" id="btn-nav-feed" onclick="window.changeAppView('feed')"><i class="fa-solid fa-house"></i> Ana Akış</div>
+                <div class="sidebar-btn" id="btn-nav-create" onclick="window.changeAppView('create')"><i class="fa-solid fa-square-plus"></i> Çağrı Yap</div>
+                <div class="sidebar-btn" id="btn-nav-notifications" onclick="window.changeAppView('notifications')">
+                    <i class="fa-solid fa-bell"></i> Bildirimler <span id="pc-noti-dot" class="notification-badge-dot" style="display:none;"></span>
+                </div>
+                <div class="sidebar-btn" id="btn-nav-profile" onclick="window.changeAppView('profile')"><i class="fa-solid fa-user"></i> Profilim</div>
+            </div>
+        </aside>
+
+        <main class="spotify-panel main-panel-view">
+            
+            <div id="view-app-feed" class="main-feed-view active-view">
+                <h2 style="font-size: 26px; font-weight: 800; margin-bottom: 20px;">Girişim Ortakları</h2>
+                <div id="networking-global-feed"></div>
+            </div>
+
+            <div id="view-app-create" class="main-feed-view">
+                <h2 style="font-size: 26px; font-weight: 800; margin-bottom: 20px;">Network Çağrısı Yap</h2>
+                <div style="background-color: #181818; padding: 24px; border-radius: 8px;">
+                    <input type="text" id="post-title-input" class="spotify-input" placeholder="Proje / İhtiyaç Başlığı">
+                    <textarea id="post-body-input" class="spotify-textarea" placeholder="Detayları buraya yazın..."></textarea>
+                    <button class="spotify-btn" id="post-submit-btn" onclick="window.createNewNetworkPost()">Yayınla</button>
+                </div>
+            </div>
+
+            <div id="view-app-notifications" class="main-feed-view">
+                <h2 style="font-size: 26px; font-weight: 800; margin-bottom: 20px;">Bildirimler</h2>
+                <div id="app-notifications-list" style="display:flex; flex-direction:column; gap:10px;"></div>
+            </div>
+
+            <div id="view-app-profile" class="main-feed-view">
+                <h2 style="font-size: 26px; font-weight: 800; margin-bottom: 20px;">Profilim</h2>
+                
+                <div id="profile-view-mode-card" style="background-color: #181818; padding: 24px; border-radius: 8px; text-align: center; position: relative;">
+                    
+                    <div class="profile-settings-container">
+                        <button class="profile-settings-trigger" onclick="window.toggleProfileSettingsMenu(event)">
+                            <i class="fa-solid fa-gear"></i>
+                        </button>
+                        <div class="profile-settings-menu" id="profile-settings-dropdown">
+                            <button class="profile-settings-item" onclick="window.showProfileSettingAlert('Kurallar', 'Pofynetwork kuralları: Küfür, hakaret ve siyasi konuşmalar kesinlikle yasaktır. Tespit edilen hesaplar kalıcı olarak engellenir.')">
+                                <i class="fa-solid fa-scroll"></i> Kurallar
+                            </button>
+                            <button class="profile-settings-item" onclick="window.showProfileSettingAlert('İletişim', 'Destek ve geri bildirimleriniz için pofynetwork@gmail.com adresi üzerinden bizimle iletişime geçebilirsiniz.')">
+                                <i class="fa-solid fa-envelope"></i> İletişim
+                            </button>
+                            <button class="profile-settings-item" onclick="window.promptAdminActivation()">
+                                <i class="fa-solid fa-user-shield"></i> Adminlik
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="selected-pfp-large" id="view-my-avatar-frame" style="margin-bottom: 12px;">
+                        <span id="view-my-avatar-char">?</span>
+                    </div>
+                    <h3 id="view-my-profile-name" style="font-size: 24px; font-weight: 800;">-</h3>
+                    <div id="view-my-profile-role-badge" style="margin-top: 4px;"></div>
+                    
+                    <p id="view-my-profile-bio" style="color: #b3b3b3; font-size: 14px; margin: 20px auto; max-width: 450px; line-height: 1.6; font-style: italic;">Henüz bir açıklama eklenmedi.</p>
+                    
+                    <div class="social-row-links" id="view-my-profile-socials" style="margin-bottom: 24px;"></div>
+                    
+                    <button class="spotify-btn" onclick="window.switchProfileToEditMode()"><i class="fa-solid fa-user-pen"></i> Profili Düzenle</button>
+                    <button class="spotify-btn" style="background:#cc3333; color:#fff; margin-left: 8px;" onclick="window.executeAppLogout()">Çıkış Yap</button>
+                </div>
+
+                <div id="profile-edit-mode-form" style="background-color: #181818; padding: 24px; border-radius: 8px; display: none;">
+                    <div class="selected-pfp-large" id="my-profile-avatar-zone" style="cursor: pointer;" onclick="document.getElementById('pfp-file-trigger').click()">
+                        <span id="my-avatar-char">?</span>
+                        <div style="position:absolute; bottom:0; width:100%; background:rgba(0,0,0,0.6); font-size:11px; padding:4px 0; text-align:center;">Değiştir</div>
+                    </div>
+                    <input type="file" id="pfp-file-trigger" accept="image/*" style="display:none;" onchange="window.uploadUserAvatarFile(this)">
+                    
+                    <label style="font-size:12px; color:#b3b3b3; display:block; margin-bottom:6px;">Girişimci / Kurucu Adı</label>
+                    <input type="text" id="profile-edit-name" class="spotify-input">
+                    
+                    <label style="font-size:12px; color:#b3b3b3; display:block; margin-bottom:6px;">Ekosistem Rolün</label>
+                    <select id="profile-edit-role" class="spotify-select">
+                        <option value="girişimci">Girişimci / Founder</option>
+                        <option value="yazılımcı">Yazılımcı / Developer</option>
+                        <option value="üretici">İçerik Üreticisi / Creator</option>
+                    </select>
+
+                    <label style="font-size:12px; color:#b3b3b3; display:block; margin-bottom:6px;">Hakkımda / Girişim Açıklaması</label>
+                    <textarea id="profile-edit-bio" class="spotify-textarea" placeholder="Kendinizden veya vizyonunuzdan bahsedin..."></textarea>
+
+                    <h4 style="margin: 16px 0 10px; font-size:14px; border-top:1px solid #242424; padding-top:16px;">Sosyal Medya Bağlantıları</h4>
+                    <input type="text" id="profile-link-x" class="spotify-input" placeholder="X (Twitter) URL Linki">
+                    <input type="text" id="profile-link-github" class="spotify-input" placeholder="GitHub URL Linki">
+                    <input type="text" id="profile-link-linkedin" class="spotify-input" placeholder="LinkedIn URL Linki">
+
+                    <div style="display:flex; gap:10px;">
+                        <button class="spotify-btn" style="flex:1;" onclick="window.saveNewProfileSettings()">Kaydet</button>
+                        <button class="spotify-btn" style="background:#333; color:#fff; flex:1;" onclick="window.switchProfileToViewMode()">İptal</button>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+
+        <aside class="spotify-panel right-detail-panel" id="view-app-detail-panel">
+            <div class="detail-header-wrapper">
+                <div class="detail-header-text" id="detail-header-title">Ağ Kartı İncelemesi</div>
+                <button class="spotify-btn" style="padding: 4px 12px; font-size:11px; background:#333; color:#fff;" onclick="window.closeMobileDetailPanel()">✕ Kapat</button>
+            </div>
+            
+            <div id="panel-card-selected-active" style="display: none; flex-direction: column; height: 100%; width:100%;">
+                
+                <div style="padding: 16px 16px 0 16px; display: flex; flex-direction: column; gap: 10px;">
+                    <div class="pitch-scroll-box" id="detail-panel-specs"></div>
+                </div>
+
+                <div class="network-chat-area">
+                    <div class="chat-header-bar" id="chat-header-user-title">Fikir Alışverişi (Yorumlar)</div>
+                    <div class="chat-messages-container" id="detail-panel-chat-logs"></div>
+                    
+                    <div class="chat-bottom-input-bar">
+                        <textarea id="chat-input-msg-field" class="chat-textarea-field" placeholder="Yorum yazın..." rows="1"></textarea>
+                        <button class="chat-round-send-btn" onclick="window.sendNetworkDirectMessage()">
+                            <i class="fa-solid fa-paper-plane"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="panel-card-placeholder" style="text-align: center; color: #53535d; margin-top: 80px; font-size: 14px; padding: 20px;">
+                <i class="fa-solid fa-handshake" style="font-size: 44px; margin-bottom: 12px; color: #242424;"></i>
+                <p>Detayları incelemek ve tartışmaya katılmak için akıştan bir network kartına tıklayın.</p>
+            </div>
+        </aside>
+
+    </div>
+
+    <nav class="mobile-bottom-navbar" id="app-mobile-navbar">
+        <div class="m-nav-item active-mnav" id="m-btn-feed" onclick="window.changeAppView('feed')"><i class="fa-solid fa-house"></i><span>Akış</span></div>
+        <div class="m-nav-item" id="m-btn-notifications" onclick="window.changeAppView('notifications')"><i class="fa-solid fa-bell"></i><span>Bildirim</span></div>
+        <div class="m-nav-item plus-only-btn" id="m-btn-create" onclick="window.changeAppView('create')"><i class="fa-solid fa-plus"></i></div>
+        <div class="m-nav-item" id="m-btn-detail" onclick="window.openMobileDetailPanel()"><i class="fa-solid fa-comments"></i><span>Mesajlar</span></div>
+        <div class="m-nav-item" id="m-btn-profile" onclick="window.changeAppView('profile')"><i class="fa-solid fa-user"></i><span>Profil</span></div>
+    </nav>
+
+    <div class="live-system-debugger" id="app-debugger-console">[Debugger]</div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { getFirestore, collection, addDoc, query, where, orderBy, onSnapshot, doc, getDoc, setDoc, updateDoc, deleteDoc, arrayUnion, arrayRemove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
+
+        function debugLog(text) { document.getElementById('app-debugger-console').innerText = text; }
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyB-Bt3ZYdVSEzGdtUVCmVQqunidUk8Qj50",
+            authDomain: "pofily-34a55.firebaseapp.com",
+            projectId: "pofily-34a55",
+            storageBucket: "pofily-34a55.firebasestorage.app",
+            messagingSenderId: "1081785420248",
+            appId: "1:1081785420248:web:0fdd53fb3dce0c7af2caad"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const storage = getStorage(app);
+
+        let currentUser = null;
+        let userData = null;
+        let isSignUpMode = false;
+        let selectedNetworkCard = null;
+        let unsubscribeMessages = null;
+
+        // TEK SEFERLİK UYARI SİSTEMİ
+        function triggerPofyRulesPopup() {
+            if (!localStorage.getItem('pofy_rules_shown')) {
+                const popup = document.getElementById('pofy-rules-popup');
+                popup.classList.add('active');
+            }
+        }
+
+        window.closePofyRules = () => {
+            const popup = document.getElementById('pofy-rules-popup');
+            popup.classList.remove('active');
+            localStorage.setItem('pofy_rules_shown', 'true');
+        };
+
+        // AYARLAR DROPDOWN KONTROLLERİ
+        window.toggleProfileSettingsMenu = (event) => {
+            event.stopPropagation();
+            const dropdown = document.getElementById('profile-settings-dropdown');
+            dropdown.classList.toggle('active');
+        };
+
+        // Menü dışına tıklandığında dropdown'ı kapat
+        document.addEventListener('click', () => {
+            const dropdown = document.getElementById('profile-settings-dropdown');
+            if (dropdown) dropdown.classList.remove('active');
+        });
+
+        window.showProfileSettingAlert = (title, message) => {
+            alert(`${title}\n\n${message}`);
+        };
+
+        // ADMİNLİK AKTİVASYON SİSTEMİ
+        window.promptAdminActivation = async () => {
+            const password = prompt("Adminlik şifresini giriniz:");
+            if (password === null) return; // İptal edilirse çık
+
+            if (password === "diyarali2121") {
+                if (!currentUser) {
+                    alert("Oturum açmış bir kullanıcı bulunamadı.");
+                    return;
+                }
+                try {
+                    const userDocRef = doc(db, "users", currentUser.uid);
+                    await updateDoc(userDocRef, {
+                        role: "admin"
+                    });
+                    alert("Tebrikler! Adminlik yetkiniz başarıyla tanımlandı. Profiliniz güncelleniyor.");
+                    location.reload(); // Değişiklikleri tam yansıtmak için yenileme
+                } catch (error) {
+                    console.error("Admin yetkisi atanırken hata:", error);
+                    alert("Yetki güncellenirken bir hata oluştu: " + error.message);
+                }
+            } else {
+                alert("Hatalı adminlik şifresi girdiniz!");
+            }
+        };
+
+        // PROFİL DETAY MODAL KONTROLLERİ
+        window.openPofyProfileModal = async (uid) => {
+            try {
+                const userDoc = await getDoc(doc(db, "users", uid));
+                if (userDoc.exists()) {
+                    const data = userDoc.data();
+                    document.getElementById('modal-user-name').innerText = data.fullname || "İsimsiz";
+                    
+                    let roleHtml = `<span class="badge-role role-girişimci">Girişimci</span>`;
+                    if(data.role === 'yazılımcı') roleHtml = `<span class="badge-role role-yazılımcı">Yazılımcı</span>`;
+                    if(data.role === 'üretici') roleHtml = `<span class="badge-role role-üretici">Üretici</span>`;
+                    if(data.role === 'admin') roleHtml = `<span class="badge-role role-admin"><i class="fa-solid fa-crown"></i> Admin</span>`;
+                    document.getElementById('modal-user-badge').innerHTML = roleHtml;
+                    
+                    document.getElementById('modal-user-bio').innerText = data.bio || "Stratejik vizyon belirtilmedi.";
+                    
+                    let avatarChar = (data.fullname || "?").charAt(0).toUpperCase();
+                    const modalAvatar = document.getElementById('modal-user-avatar');
+                    if(data.avatarUrl) {
+                        modalAvatar.style.backgroundImage = `url('${data.avatarUrl}')`;
+                        modalAvatar.innerText = "";
+                    } else {
+                        modalAvatar.style.backgroundImage = "none";
+                        modalAvatar.innerText = avatarChar;
+                    }
+                    
+                    let socialsHtml = "";
+                    if(data.linkX) socialsHtml += `<a href="${data.linkX}" target="_blank" class="social-icon-btn"><i class="fa-brands fa-x-twitter"></i></a>`;
+                    if(data.linkGithub) socialsHtml += `<a href="${data.linkGithub}" target="_blank" class="social-icon-btn"><i class="fa-brands fa-github"></i></a>`;
+                    if(data.linkLinkedin) socialsHtml += `<a href="${data.linkLinkedin}" target="_blank" class="social-icon-btn"><i class="fa-brands fa-linkedin-in"></i></a>`;
+                    document.getElementById('modal-user-socials').innerHTML = socialsHtml || "<span style='color:#535353; font-size:12px;'>Sosyal bağ yok</span>";
+                    
+                    document.getElementById('pofy-profile-modal').style.display = "flex";
+                }
+            } catch(e) { console.error(e); }
+        };
+
+        window.closePofyModal = () => {
+            document.getElementById('pofy-profile-modal').style.display = "none";
+        };
+
+        // GÖRÜNÜM DEĞİŞTİRİCİ
+        window.changeAppView = (viewName) => {
+            document.querySelectorAll('.main-feed-view').forEach(el => el.classList.remove('active-view'));
+            document.querySelectorAll('.sidebar-btn').forEach(el => el.classList.remove('active-nav'));
+            document.querySelectorAll('.m-nav-item').forEach(el => el.classList.remove('active-mnav'));
+            
+            const targetView = document.getElementById(`view-app-${viewName}`);
+            if(targetView) targetView.classList.add('active-view');
+            
+            const pcBtn = document.getElementById(`btn-nav-${viewName}`);
+            if(pcBtn) pcBtn.classList.add('active-nav');
+            
+            const mBtn = document.getElementById(`m-btn-${viewName}`);
+            if(mBtn) mBtn.classList.add('active-mnav');
+        };
+
+        window.openMobileDetailPanel = () => {
+            document.getElementById('view-app-detail-panel').classList.add('mobile-active-panel');
+            document.querySelectorAll('.m-nav-item').forEach(el => el.classList.remove('active-mnav'));
+            document.getElementById('m-btn-detail').classList.add('active-mnav');
+        };
+        window.closeMobileDetailPanel = () => {
+            document.getElementById('view-app-detail-panel').classList.remove('mobile-active-panel');
+            window.changeAppView('feed');
+        };
+
+        // KULLANICI DOĞRULAMA (AUTH) DÖNGÜSÜ
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                currentUser = user;
+                debugLog(`Giriş yapıldı: ${user.email}`);
+                
+                const userDoc = await getDoc(doc(db, "users", user.uid));
+                if(userDoc.exists()) {
+                    userData = userDoc.data();
+                    document.getElementById('app-auth-screen').style.display = "none";
+                    document.getElementById('app-role-selection-screen').style.display = "none";
+                    document.getElementById('app-main-workspace').style.display = "grid";
+                    syncMyProfileUI();
+                    listenGlobalFeed();
+                    listenMyNotifications();
+                    triggerPofyRulesPopup();
+                } else {
+                    document.getElementById('app-auth-screen').style.display = "none";
+                    document.getElementById('app-role-selection-screen').style.display = "flex";
+                }
+            } else {
+                currentUser = null;
+                userData = null;
+                document.getElementById('app-main-workspace').style.display = "none";
+                document.getElementById('app-role-selection-screen').style.display = "none";
+                document.getElementById('app-auth-screen').style.display = "flex";
+                debugLog("Oturum açık değil.");
+            }
+        });
+
+        window.toggleAuthScreenMode = () => {
+            isSignUpMode = !isSignUpMode;
+            document.getElementById('register-fullname').style.display = isSignUpMode ? "block" : "none";
+            document.getElementById('auth-title').innerText = isSignUpMode ? "Ağa Katıl ve Üretmeye Başla" : "Girişimci & Yazılımcı Ağı";
+            document.getElementById('auth-main-btn').innerText = isSignUpMode ? "Kayıt Ol" : "Giriş Yap";
+            document.getElementById('auth-toggle-trigger').innerText = isSignUpMode ? "Zaten hesabın var mı? Giriş Yap" : "Hesabın yok mu? Ücretsiz Kayıt Ol";
+        };
+
+        window.submitAuthForm = async () => {
+            const email = document.getElementById('auth-email-field').value.trim();
+            const pass = document.getElementById('auth-pass-field').value;
+            const name = document.getElementById('register-fullname').value.trim();
+            
+            if(!email || !pass) { alert("Lütfen alanları doldurun."); return; }
+            
+            try {
+                if(isSignUpMode) {
+                    if(!name) { alert("Lütfen adınızı yazın."); return; }
+                    const cred = await createUserWithEmailAndPassword(auth, email, pass);
+                    // onboarding aşamasına yönlendirilecek, onAuthStateChanged yakalayacak
+                } else {
+                    await signInWithEmailAndPassword(auth, email, pass);
+                }
+            } catch(e) { alert("Hata: " + e.message); }
+        };
+
+        window.completeRoleOnboarding = async (chosenRole) => {
+            if(!currentUser) return;
+            const nameInput = document.getElementById('register-fullname').value.trim() || currentUser.email.split('@')[0];
+            const newUserData = {
+                uid: currentUser.uid,
+                fullname: nameInput,
+                role: chosenRole,
+                bio: "Merhaba, pofynetwork ekosistemine yeni katıldım!",
+                avatarUrl: "",
+                linkX: "",
+                linkGithub: "",
+                linkLinkedin: "",
+                createdAt: new Date().toISOString()
+            };
+            await setDoc(doc(db, "users", currentUser.uid), newUserData);
+            userData = newUserData;
+            document.getElementById('app-role-selection-screen').style.display = "none";
+            document.getElementById('app-main-workspace').style.display = "grid";
+            syncMyProfileUI();
+            listenGlobalFeed();
+            listenMyNotifications();
+        };
+
+        // KENDİ PROFİL BİLGİLERİNİ UI'A YANSITMA
+        function syncMyProfileUI() {
+            if(!userData) return;
+            document.getElementById('view-my-profile-name').innerText = userData.fullname || "İsimsiz";
+            document.getElementById('profile-edit-name').value = userData.fullname || "";
+            document.getElementById('profile-edit-role').value = userData.role || "girişimci";
+            document.getElementById('profile-edit-bio').value = userData.bio || "";
+            document.getElementById('profile-link-x').value = userData.linkX || "";
+            document.getElementById('profile-link-github').value = userData.linkGithub || "";
+            document.getElementById('profile-link-linkedin').value = userData.linkLinkedin || "";
+            document.getElementById('view-my-profile-bio').innerText = userData.bio || "Henüz bir açıklama eklenmedi.";
+            
+            let badgeHtml = `<span class="badge-role role-girişimci">Girişimci / Founder</span>`;
+            if(userData.role === 'yazılımcı') badgeHtml = `<span class="badge-role role-yazılımcı">Yazılımcı / Developer</span>`;
+            if(userData.role === 'üretici') badgeHtml = `<span class="badge-role role-üretici">İçerik Üreticisi / Creator</span>`;
+            if(userData.role === 'admin') badgeHtml = `<span class="badge-role role-admin"><i class="fa-solid fa-crown"></i> Yönetici / Admin</span>`;
+            document.getElementById('view-my-profile-role-badge').innerHTML = badgeHtml;
+            
+            let char = (userData.fullname || "?").charAt(0).toUpperCase();
+            document.getElementById('view-my-avatar-char').innerText = char;
+            document.getElementById('my-avatar-char').innerText = char;
+            
+            const frame = document.getElementById('view-my-avatar-frame');
+            const zone = document.getElementById('my-profile-avatar-zone');
+            if(userData.avatarUrl) {
+                frame.style.backgroundImage = `url('${userData.avatarUrl}')`;
+                zone.style.backgroundImage = `url('${userData.avatarUrl}')`;
+                document.getElementById('view-my-avatar-char').innerText = "";
+                document.getElementById('my-avatar-char').innerText = "";
+            } else {
+                frame.style.backgroundImage = "none";
+                zone.style.backgroundImage = "none";
+            }
+            
+            let socialsHtml = "";
+            if(userData.linkX) socialsHtml += `<a href="${userData.linkX}" target="_blank" class="social-icon-btn"><i class="fa-brands fa-x-twitter"></i></a>`;
+            if(userData.linkGithub) socialsHtml += `<a href="${userData.linkGithub}" target="_blank" class="social-icon-btn"><i class="fa-brands fa-github"></i></a>`;
+            if(userData.linkLinkedin) socialsHtml += `<a href="${userData.linkLinkedin}" target="_blank" class="social-icon-btn"><i class="fa-brands fa-linkedin-in"></i></a>`;
+            document.getElementById('view-my-profile-socials').innerHTML = socialsHtml;
+        }
+
+        window.switchProfileToEditMode = () => {
+            document.getElementById('profile-view-mode-card').style.display = "none";
+            document.getElementById('profile-edit-mode-form').style.display = "block";
+        };
+        window.switchProfileToViewMode = () => {
+            document.getElementById('profile-edit-mode-form').style.display = "none";
+            document.getElementById('profile-view-mode-card').style.display = "block";
+        };
+
+        window.saveNewProfileSettings = async () => {
+            if(!currentUser) return;
+            const updated = {
+                fullname: document.getElementById('profile-edit-name').value.trim(),
+                role: document.getElementById('profile-edit-role').value,
+                bio: document.getElementById('profile-edit-bio').value.trim(),
+                linkX: document.getElementById('profile-link-x').value.trim(),
+                linkGithub: document.getElementById('profile-link-github').value.trim(),
+                linkLinkedin: document.getElementById('profile-link-linkedin').value.trim()
+            };
+            
+            await updateDoc(doc(db, "users", currentUser.uid), updated);
+            userData = { ...userData, ...updated };
+            syncMyProfileUI();
+            window.switchProfileToViewMode();
+        };
+
+        window.uploadUserAvatarFile = async (input) => {
+            const file = input.files[0];
+            if(!file || !currentUser) return;
+            debugLog("Görsel yükleniyor...");
+            try {
+                const storageRef = ref(storage, `avatars/${currentUser.uid}`);
+                await uploadBytes(storageRef, file);
+                const url = await getDownloadURL(storageRef);
+                await updateDoc(doc(db, "users", currentUser.uid), { avatarUrl: url });
+                userData.avatarUrl = url;
+                syncMyProfileUI();
+                debugLog("Görsel başarıyla güncellendi.");
+            } catch(e) { alert("Yükleme başarısız: " + e.message); }
+        };
+
+        window.executeAppLogout = () => { signOut(auth); };
+
+        // NETWORK POST SİSTEMİ (ÇAĞRI YAP)
+        window.createNewNetworkPost = async () => {
+            const title = document.getElementById('post-title-input').value.trim();
+            const body = document.getElementById('post-body-input').value.trim();
+            if(!title || !body) { alert("Lütfen alanları boş bırakmayın."); return; }
+            
+            await addDoc(collection(db, "posts"), {
+                uid: currentUser.uid,
+                authorName: userData.fullname,
+                authorRole: userData.role,
+                authorAvatar: userData.avatarUrl || "",
+                title: title,
+                body: body,
+                likes: [],
+                createdAt: new Date().toISOString()
+            });
+            
+            document.getElementById('post-title-input').value = "";
+            document.getElementById('post-body-input').value = "";
+            window.changeAppView('feed');
+        };
+
+        window.deleteNetworkPost = async (postId, e) => {
+            e.stopPropagation();
+            if(confirm("Bu çağrıyı silmek istediğinize emin misiniz?")) {
+                await deleteDoc(doc(db, "posts", postId));
+                if(selectedNetworkCard && selectedNetworkCard.id === postId) {
+                    document.getElementById('panel-card-selected-active').style.display = "none";
+                    document.getElementById('panel-card-placeholder').style.display = "block";
+                }
+            }
+        };
+
+        window.toggleLikeNetworkPost = async (postId, likesArray, e) => {
+            e.stopPropagation();
+            if(!currentUser) return;
+            const postRef = doc(db, "posts", postId);
+            if(likesArray.includes(currentUser.uid)) {
+                await updateDoc(postRef, { likes: arrayRemove(currentUser.uid) });
+            } else {
+                await updateDoc(postRef, { likes: arrayUnion(currentUser.uid) });
+            }
+        };
+
+        // REALTIME AKIŞ DİNLEYİCİSİ
+        function listenGlobalFeed() {
+            const q = query(collection(db, "posts"), orderBy("createdAt", "desc"));
+            onSnapshot(q, (snapshot) => {
+                let html = "";
+                snapshot.forEach((docSnap) => {
+                    const post = docSnap.data();
+                    const pid = docSnap.id;
+                    const isLiked = post.likes ? post.likes.includes(currentUser?.uid) : false;
+                    const likeCount = post.likes ? post.likes.length : 0;
+                    
+                    let pfpContent = (post.authorName || "?").charAt(0).toUpperCase();
+                    if(post.authorAvatar) pfpContent = "";
+                    
+                    let deleteIconHtml = "";
+                    // Kullanıcı kendi gönderisiyse VEYA admin rolündeyse silme butonunu görsün
+                    if(post.uid === currentUser?.uid || userData?.role === 'admin') {
+                        deleteIconHtml = `<div class="post-delete-btn" onclick="window.deleteNetworkPost('${pid}', event)"><i class="fa-solid fa-trash-can"></i></div>`;
+                    }
+                    
+                    let rBadge = `<span class="badge-role role-girişimci">Girişimci</span>`;
+                    if(post.authorRole === 'yazılımcı') rBadge = `<span class="badge-role role-yazılımcı">Yazılımcı</span>`;
+                    if(post.authorRole === 'üretici') rBadge = `<span class="badge-role role-üretici">Üretici</span>`;
+                    if(post.authorRole === 'admin') rBadge = `<span class="badge-role role-admin"><i class="fa-solid fa-crown"></i> Admin</span>`;
+
+                    html += `
+                        <div class="network-post-card" onclick="window.selectNetworkDetailCard('${pid}')">
+                            ${deleteIconHtml}
+                            <div class="post-header">
+                                <div class="user-meta-box">
+                                    <div class="user-pfp" style="background-image: url('${post.authorAvatar || ''}')" onclick="event.stopPropagation(); window.openPofyProfileModal('${post.uid}')">
+                                        ${pfpContent}
+                                    </div>
+                                    <div>
+                                        <div style="font-size:14px; font-weight:700;">${post.authorName}</div>
+                                        ${rBadge}
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="post-title">${post.title}</div>
+                            <div class="post-body">${post.body}</div>
+                            <div class="card-footer-metrics">
+                                <button class="like-btn ${isLiked ? 'liked' : ''}" onclick="window.toggleLikeNetworkPost('${pid}', ${JSON.stringify(post.likes || [])}, event)">
+                                    <i class="fa-${isLiked ? 'solid' : 'regular'} fa-heart"></i> ${likeCount} Beğeni
+                                </button>
+                                <span><i class="fa-regular fa-comment"></i> Fikir Alışverişi</span>
+                            </div>
+                        </div>
+                    `;
+                });
+                document.getElementById('networking-global-feed').innerHTML = html || "<p style='color:#535353; padding:20px; text-align:center;'>Henüz ekosistem çağrısı bulunmuyor.</p>";
+                
+                if(selectedNetworkCard) {
+                    const updatedCard = snapshot.docs.find(d => d.id === selectedNetworkCard.id);
+                    if(updatedCard) {
+                        selectedNetworkCard = updatedCard;
+                        syncDetailPanelSpecs();
+                    }
+                }
+            });
+        }
+
+        // DETAY PANELİ VE YORUM/CHAT SİSTEMİ
+        window.selectNetworkDetailCard = async (postId) => {
+            const postDoc = await getDoc(doc(db, "posts", postId));
+            if(!postDoc.exists()) return;
+            selectedNetworkCard = postDoc;
+            
+            document.getElementById('panel-card-placeholder').style.display = "none";
+            document.getElementById('panel-card-selected-active').style.display = "flex";
+            
+            syncDetailPanelSpecs();
+            listenPostMessages(postId);
+            
+            if(window.innerWidth <= 1024) {
+                window.openMobileDetailPanel();
+            }
+        };
+
+        function syncDetailPanelSpecs() {
+            if(!selectedNetworkCard) return;
+            const post = selectedNetworkCard.data();
+            document.getElementById('detail-panel-specs').innerHTML = `
+                <h4 style="color:#fff; font-size:15px; font-weight:800; margin-bottom:4px;"><i class="fa-solid fa-circle-nodes" style="color:#4fd1c5;"></i> ${post.title}</h4>
+                <p style="font-size:12px; color:#a7a7a7;">Yazar: <b>${post.authorName}</b></p>
+                <div style="margin-top:8px; color:#b3b3b3; line-height:1.4;">${post.body}</div>
+            `;
+        }
+
+        function listenPostMessages(postId) {
+            if(unsubscribeMessages) unsubscribeMessages();
+            const q = query(collection(db, "posts", postId, "messages"), orderBy("timestamp", "asc"));
+            unsubscribeMessages = onSnapshot(q, (snapshot) => {
+                let html = "";
+                snapshot.forEach((mDoc) => {
+                    const msg = mDoc.data();
+                    const isMe = msg.uid === currentUser?.uid;
+                    
+                    let bBadge = "";
+                    if(msg.role === 'yazılımcı') bBadge = `<span class="chat-sender-badge">DEV</span>`;
+                    if(msg.role === 'üretici') bBadge = `<span class="chat-sender-badge">CREATOR</span>`;
+                    if(msg.role === 'admin') bBadge = `<span class="chat-sender-badge" style="background:purple; color:#fff;">ADMIN</span>`;
+
+                    html += `
+                        <div class="chat-bubble-wrapper ${isMe ? 'wrapper-right' : 'wrapper-left'}">
+                            <div class="chat-bubble-row">
+                                <div class="chat-sender-meta">
+                                    <span class="chat-sender-name" onclick="window.openPofyProfileModal('${msg.uid}')" style="cursor:pointer;">${msg.senderName}</span>
+                                    ${bBadge}
+                                </div>
+                                <div class="chat-bubble-text">${msg.text}</div>
+                            </div>
+                        </div>
+                    `;
+                });
+                const container = document.getElementById('detail-panel-chat-logs');
+                container.innerHTML = html || "<p style='color:#3e4a52; text-align:center; font-size:12px; margin-top:20px;'>İlk stratejik yorumu siz yapın.</p>";
+                container.scrollTop = container.scrollHeight;
+            });
+        }
+
+        window.sendNetworkDirectMessage = async () => {
+            const field = document.getElementById('chat-input-msg-field');
+            const txt = field.value.trim();
+            if(!txt || !selectedNetworkCard || !currentUser) return;
+            
+            const postData = selectedNetworkCard.data();
+            const pid = selectedNetworkCard.id;
+            
+            await addDoc(collection(db, "posts", pid, "messages"), {
+                uid: currentUser.uid,
+                senderName: userData.fullname,
+                role: userData.role,
+                text: txt,
+                timestamp: new Date().toISOString()
+            });
+            
+            field.value = "";
+            
+            if(postData.uid !== currentUser.uid) {
+                await addDoc(collection(db, "notifications"), {
+                    targetUid: postData.uid,
+                    senderName: userData.fullname,
+                    senderRole: userData.role,
+                    postTitle: postData.title,
+                    type: "comment",
+                    read: false,
+                    createdAt: new Date().toISOString()
+                });
+            }
+        };
+
+        // BİLDİRİM SİSTEMİ
+        function listenMyNotifications() {
+            if(!currentUser) return;
+            const q = query(collection(db, "notifications"), where("targetUid", "==", currentUser.uid), orderBy("createdAt", "desc"));
+            onSnapshot(q, (snapshot) => {
+                let html = "";
+                let hasUnread = false;
+                snapshot.forEach((nDoc) => {
+                    const noti = nDoc.data();
+                    const nid = nDoc.id;
+                    if(!noti.read) hasUnread = true;
+                    
+                    let badge = `<span class="noti-badge role-girişimci">Girişimci</span>`;
+                    if(noti.senderRole === 'yazılımcı') badge = `<span class="noti-badge role-yazılımcı">Yazılımcı</span>`;
+                    if(noti.senderRole === 'üretici') badge = `<span class="noti-badge role-üretici">Üretici</span>`;
+                    if(noti.senderRole === 'admin') badge = `<span class="noti-badge role-admin">Admin</span>`;
+
+                    html += `
+                        <div class="notification-item-card" style="opacity: ${noti.read ? '0.6' : '1'};">
+                            <i class="fa-solid fa-trash-can noti-delete-trigger" onclick="window.deleteNotification('${nid}', event)"></i>
+                            <div class="noti-user-info">
+                                <span class="noti-user-name">${noti.senderName}</span>
+                                ${badge}
+                            </div>
+                            <div style="font-size:13px; color:#b3b3b3; margin-top:2px;">
+                                "<b>${noti.postTitle}</b>" başlıklı ağ çağrınıza fikir sundu.
+                            </div>
+                        </div>
+                    `;
+                });
+                document.getElementById('app-notifications-list').innerHTML = html || "<p style='color:#535353; text-align:center; padding:20px;'>Henüz etkileşim bildirimi yok.</p>";
+                
+                const dotPc = document.getElementById('pc-noti-dot');
+                if(dotPc) dotPc.style.display = hasUnread ? "inline-block" : "none";
+            });
+        }
+
+        window.deleteNotification = async (nid, e) => {
+            e.stopPropagation();
+            await deleteDoc(doc(db, "notifications", nid));
+        };
+    </script>
+</body>
+</html>
